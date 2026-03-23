@@ -393,7 +393,17 @@ async function runLiveHint() {
 L'appel est EN COURS. Donne 1 ou 2 conseils TRÈS COURTS actionnables immédiatement. Style impératif direct. Ville : ${ville}.
 Transcription (fin) : ${cur.slice(-400)}
 Réponds UNIQUEMENT avec ce JSON (commence par {) : {"hints":["conseil 1","conseil 2"]}`;
-  try { window.sendPrompt(prompt); } catch(_) { document.getElementById('liveBody').innerHTML = '<div class="lsp">—</div>'; }
+  fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.text) window.dispatchEvent(new MessageEvent('message', { data: { text: data.text } }));
+    else document.getElementById('liveBody').innerHTML = '<div class="lsp">—</div>';
+  })
+  .catch(() => { document.getElementById('liveBody').innerHTML = '<div class="lsp">—</div>'; });
 }
 
 // ── CHAR COUNT + DETECT ──
@@ -460,13 +470,22 @@ ${txt}
 FORMAT (commence par {, rien d'autre) :
 {"scoreGlobal":5,"villeDetectee":"${ville}","transcript":[{"who":"C","text":"…"},{"who":"P","text":"…"}],"pointsForts":["…","…"],"pointsFaibles":["…","…","…"],"scores":{"Introduction":6,"Présentation événement":5,"Découverte client":1,"Argumentaire":5,"Tarifs & Packs":4,"Gestion objections":2,"Clôture":3},"objections":[{"type":"…","gestion":"ko","commentaire":"…"}],"coaching":"phrase courte, percutante, immédiatement actionnable"}`;
 
-  try { window.sendPrompt(prompt); }
-  catch(e) {
-    showErr('sendPrompt indisponible dans cet environnement');
+  fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.text) window.dispatchEvent(new MessageEvent('message', { data: { text: data.text } }));
+    else { showErr('réponse vide de l\'API'); document.getElementById('analyzeBtn').disabled = false; document.getElementById('waitingBox').classList.remove('on'); window._awaitingAnalysis = false; }
+  })
+  .catch(e => {
+    showErr('erreur API : ' + e.message);
     document.getElementById('analyzeBtn').disabled = false;
     document.getElementById('waitingBox').classList.remove('on');
     window._awaitingAnalysis = false;
-  }
+  });
 });
 
 // ── ÉCOUTE RÉPONSES CLAUDE ──
