@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoachVDR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#d8d5ce;--bs:#b8b4ab;
+  --text:#1a1916;--muted:#7a7670;--muted2:#a09c96;
+  --blue:#1162AB;--orange:#c8870a;--red:#c0392b;--green:#1a7a5e;
+  --lb:#e8d4a0;--lbg:#fffbf0;
+  --mono:'DM Mono',monospace;--r:4px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.6;min-height:100vh;padding:24px 16px 80px;display:flex;flex-direction:column;align-items:center;}
+.wrap{width:100%;max-width:680px;}
+.header{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:12px;margin-bottom:20px;border-bottom:2px solid var(--text);}
+.logo{font-size:13px;font-weight:500;letter-spacing:.04em;}
+.logo em{font-style:normal;color:var(--blue);}
+.hm{font-size:10px;color:var(--muted);}
+.block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
+.bh{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--bg);}
+.bl{font-size:9.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.bb{padding:12px;}
+.vbadge{font-size:10px;color:var(--blue);padding:3px 8px;background:#f0f6ff;border:1px solid #c8ddf5;border-radius:var(--r);display:none;white-space:nowrap;}
+.vbadge.on{display:block;}
+select.vs{font-family:var(--mono);font-size:12px;background:var(--surface);border:1px solid var(--bs);border-radius:var(--r);color:var(--text);padding:6px 10px;outline:none;cursor:pointer;width:100%;}
+select.vs:focus{border-color:var(--blue);}
+select.vs option{background:var(--surface);}
+/* recorder */
+.rec-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.rbtn{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--bs);background:var(--surface);cursor:pointer;outline:none;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.rbtn:hover{border-color:var(--red);}
+.rbtn.rec{border-color:var(--red);background:#fff5f5;animation:rp 1.4s ease-in-out infinite;}
+.rbtn.done{border-color:var(--green);background:#f0faf6;}
+@keyframes rp{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.18);}50%{box-shadow:0 0 0 7px rgba(192,57,43,.05);}}
+.rdot{width:13px;height:13px;background:var(--red);border-radius:50%;transition:border-radius .15s;}
+.rdot.sq{border-radius:2px;}
+.rec-meta{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
+.rst{font-size:10px;color:var(--muted);}
+.rst.on{color:var(--red);}
+.rst.ok{color:var(--green);}
+.rtimer{font-size:10px;color:var(--muted);letter-spacing:.05em;}
+.tbox{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:11px;line-height:1.7;color:var(--text);min-height:52px;max-height:120px;overflow-y:auto;white-space:pre-wrap;}
+.tbox.empty{color:var(--muted2);font-style:italic;}
+/* live */
+.live{background:var(--lbg);border:1px solid var(--lb);border-radius:var(--r);margin-bottom:8px;display:none;}
+.live.on{display:block;}
+.lh{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:1px solid var(--lb);background:#fff8e6;}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:bk 1s ease-in-out infinite;flex-shrink:0;}
+@keyframes bk{0%,100%{opacity:1;}50%{opacity:.3;}}
+.ll{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);font-weight:500;}
+.lbody{padding:10px 12px;}
+.lhint{font-size:11.5px;line-height:1.65;color:var(--text);border-left:2px solid var(--orange);padding-left:10px;margin-bottom:7px;animation:fi .35s ease;}
+.lhint:last-child{margin-bottom:0;}
+.lsp{font-size:10px;color:var(--muted);font-style:italic;}
+@keyframes fi{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+/* manual */
+.mta{font-family:var(--mono);font-size:11px;line-height:1.75;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);padding:10px 12px;width:100%;resize:vertical;min-height:100px;outline:none;transition:border-color .15s;}
+.mta:focus{border-color:var(--blue);}
+.mta::placeholder{color:var(--muted2);font-style:italic;}
+.cc{font-size:9.5px;color:var(--muted2);text-align:right;margin-top:4px;}
+/* waiting */
+.waiting{background:var(--lbg);border:1px solid var(--lb);border-radius:var(--r);padding:9px 12px;font-size:11px;color:var(--orange);margin-bottom:8px;display:none;align-items:center;gap:8px;}
+.waiting.on{display:flex;}
+.wdot{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:bk 1s ease-in-out infinite;flex-shrink:0;}
+/* err */
+.err{background:#fdf5f4;border:1px solid #e8c5c2;border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--red);margin-bottom:8px;display:none;}
+.err.on{display:block;}
+/* buttons */
+.br{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{font-family:var(--mono);font-size:11px;padding:7px 16px;border-radius:var(--r);border:1px solid var(--bs);cursor:pointer;transition:all .15s;outline:none;}
+.bp{background:var(--blue);border-color:var(--blue);color:#fff;}
+.bp:hover:not(:disabled){background:#0e52a0;}
+.bp:disabled{opacity:.35;cursor:not-allowed;}
+.bg0{background:transparent;color:var(--muted);}
+.bg0:hover:not(:disabled){color:var(--text);border-color:var(--text);}
+.bg0:disabled{opacity:.3;cursor:not-allowed;}
+.bx{background:transparent;color:var(--orange);border-color:var(--orange);}
+.bx:hover{background:#fff8e6;}
+/* feedback */
+.ftop{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--border);}
+.fdate{font-size:10px;color:var(--muted);}
+.sg{display:flex;align-items:baseline;gap:6px;padding:14px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;}
+.sn{font-size:38px;font-weight:500;line-height:1;}
+.sn.h{color:var(--green);}
+.sn.m{color:var(--orange);}
+.sn.l{color:var(--red);}
+.sd{font-size:13px;color:var(--muted);}
+.slg{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-left:4px;}
+.tc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.fb{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:8px;}
+.fb:last-child{margin-bottom:0;}
+.fbh{padding:7px 10px;border-bottom:1px solid var(--border);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;}
+.fbh.g{color:var(--green);background:#f2faf6;}
+.fbh.r{color:var(--red);background:#fdf5f4;}
+.fbh.b{color:var(--blue);background:#f2f7fc;}
+.fbh.o{color:var(--orange);background:#fdf8f0;}
+.fbb{padding:10px;}
+ul.fl{list-style:none;}
+ul.fl li{display:flex;gap:7px;margin-bottom:6px;font-size:11.5px;line-height:1.55;}
+ul.fl li:last-child{margin-bottom:0;}
+ul.fl li::before{content:'—';color:var(--muted2);flex-shrink:0;}
+.tv{font-size:11px;line-height:1.6;margin-bottom:4px;padding:3px 8px;border-radius:3px;}
+.tv.C{background:#f0f6ff;border-left:2px solid var(--blue);}
+.tv.P{background:#f6f6f4;border-left:2px solid var(--muted2);}
+.tvw{font-size:9px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1px;display:block;}
+.tv.C .tvw{color:var(--blue);}
+.tv.P .tvw{color:var(--muted);}
+.sr{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.sr:last-child{margin-bottom:0;}
+.sl{font-size:10.5px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.st{flex:2;height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
+.sf{height:100%;border-radius:1px;transition:width 1s ease;}
+.sv{font-size:10px;min-width:28px;text-align:right;}
+.oi{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);}
+.oi:first-child{padding-top:0;}
+.oi:last-child{border-bottom:none;padding-bottom:0;}
+.op{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.op.ok{background:var(--green);}
+.op.ko{background:var(--red);}
+.ot{font-size:11px;line-height:1.55;}
+.ot strong{display:block;margin-bottom:1px;font-weight:500;}
+.ot span{color:var(--muted);}
+.cq{font-size:13px;font-weight:500;line-height:1.6;border-left:2px solid var(--orange);padding-left:10px;}
+@media print{body{background:#fff;padding:0;}#inputSection,.bx,.bg0,#errBox{display:none!important;}}
+.hidden{display:none!important;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--bs);border-radius:2px;}
+@media(max-width:520px){.tc{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div class="logo">coach<em>vdr</em></div>
+  <div class="hm">outil d'analyse · 2026</div>
+</div>
+
+<div id="inputSection">
+
+  <div class="block">
+    <div class="bh">
+      <span class="bl">Ville ciblée</span>
+      <span class="vbadge" id="vbadge"></span>
+    </div>
+    <div class="bb">
+      <select class="vs" id="ville">
+        <option value="">— détection automatique —</option>
+        <option>Nantes</option><option>Reims</option><option>Toulouse</option>
+        <option>Bordeaux</option><option>Dijon</option><option>Orléans</option><option>Lyon</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="bh">
+      <span class="bl">Enregistrement vocal</span>
+      <span class="rtimer" id="rtimer">00:00</span>
+    </div>
+    <div class="bb">
+      <div class="rec-row">
+        <button class="rbtn" id="recBtn"><div class="rdot" id="rdot"></div></button>
+        <div class="rec-meta">
+          <div class="rst" id="recStatus">appuyer pour démarrer</div>
+          <div style="margin-top:3px;">
+            <button class="btn bg0" id="resetRecBtn" disabled style="font-size:10px;padding:3px 10px;">↺ effacer</button>
+          </div>
+        </div>
+      </div>
+      <div class="tbox empty" id="recTbox">transcription en direct…</div>
+    </div>
+  </div>
+
+  <div class="live" id="liveBlock">
+    <div class="lh"><div class="ldot"></div><span class="ll">conseil en direct</span></div>
+    <div class="lbody" id="liveBody"><div class="lsp">en attente…</div></div>
+  </div>
+
+  <div class="block">
+    <div class="bh"><span class="bl">Ou coller un verbatim</span></div>
+    <div class="bb">
+      <textarea class="mta" id="manTxt" placeholder="coller ici la transcription brute de l'appel…"></textarea>
+      <div class="cc" id="cc">0 caractères</div>
+    </div>
+  </div>
+
+  <div class="err" id="errBox"></div>
+
+  <div class="waiting" id="waitingBox">
+    <div class="wdot"></div>
+    <span>analyse en cours — le feedback s'affiche ici dès réception</span>
+  </div>
+
+  <div class="br">
+    <button class="btn bp" id="analyzeBtn">analyser →</button>
+    <button class="btn bg0" id="clearBtn">tout effacer</button>
+  </div>
+
+</div>
+
+<div id="feedbackSection" class="hidden" style="margin-top:16px;">
+  <div class="ftop">
+    <div class="fdate" id="fdate"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn bx" onclick="window.print()">⬇ pdf</button>
+      <button class="btn bg0" style="font-size:10px;" onclick="resetAll()">nouvel appel</button>
+    </div>
+  </div>
+  <div class="sg">
+    <div class="sn" id="scoreNum">—</div><div class="sd">/10</div>
+    <div class="slg">score global</div>
+  </div>
+  <div class="fb" id="tFb" style="display:none;">
+    <div class="fbh b">◎ transcription annotée</div>
+    <div class="fbb" id="tLines" style="max-height:220px;overflow-y:auto;"></div>
+  </div>
+  <div class="tc">
+    <div class="fb" style="margin-bottom:0;"><div class="fbh g">✓ points forts</div><div class="fbb"><ul class="fl" id="fbGood"></ul></div></div>
+    <div class="fb" style="margin-bottom:0;"><div class="fbh r">✗ à améliorer</div><div class="fbb"><ul class="fl" id="fbBad"></ul></div></div>
+  </div>
+  <div class="fb"><div class="fbh b">◈ score par étape</div><div class="fbb" id="fbScores"></div></div>
+  <div class="fb"><div class="fbh r">⊘ objections</div><div class="fbb" id="fbObj"></div></div>
+  <div class="fb"><div class="fbh o">★ à retenir</div><div class="fbb"><div class="cq" id="fbCoach"></div></div></div>
+</div>
+
+</div>
+<script>
+// ── DONNÉES VILLES ──
+// Correspondances : nom + dates + mots-clés
+const VILLE_MAP = [
+  { ville:'Nantes',   keys:['nantes','exponantes'],                   dates:['3 mars','3/3','03/03','03 mars'] },
+  { ville:'Reims',    keys:['reims','castelnau','grand reims'],        dates:['19 mai','19/5','19/05'] },
+  { ville:'Toulouse', keys:['toulouse','mermoz','salle mermoz'],      dates:['2 juin','3 juin','2/6','3/6','02/06','03/06','2 et 3 juin','2 & 3 juin'] },
+  { ville:'Bordeaux', keys:['bordeaux','hangar 14','hangar14'],       dates:['11 juin','11/6','11/06'] },
+  { ville:'Dijon',    keys:['dijon','parc des expo'],                  dates:['24 septembre','24 sept','24/9','24/09'] },
+  { ville:'Orléans',  keys:['orléans','orleans','centre des conf'],   dates:['8 octobre','8 oct','8/10','08/10'] },
+  { ville:'Lyon',     keys:['lyon','palais de la bourse','bourse'],   dates:['14 octobre','15 octobre','14 oct','15 oct','14/10','15/10','14 et 15','14 & 15'] },
+];
+
+const STATS = {
+  nantes:   {c:'2 000', e:'60',  s:'7,5'},
+  reims:    {c:'1 500', e:'60',  s:'7,1'},
+  toulouse: {c:'5 000', e:'80',  s:'8,9'},
+  bordeaux: {c:'2 000', e:'70',  s:'8,5'},
+  dijon:    {c:'2 500', e:'80',  s:'8,1'},
+  'orléans':{c:'2 000', e:'60',  s:'8,9'},
+  lyon:     {c:'5 000', e:'100', s:'8,9'},
+};
+
+let villeDetected = '';
+
+function detectVille(txt) {
+  const t = txt.toLowerCase();
+  for (const entry of VILLE_MAP) {
+    for (const k of entry.keys)  if (t.includes(k))  return entry.ville;
+    for (const d of entry.dates) if (t.includes(d.toLowerCase())) return entry.ville;
+  }
+  return '';
+}
+
+function getVille() {
+  return document.getElementById('ville').value || villeDetected || 'non précisée';
+}
+
+function updateBadge(v) {
+  villeDetected = v;
+  const b = document.getElementById('vbadge');
+  if (v) { b.textContent = '→ ' + v + ' détectée'; b.classList.add('on'); }
+  else b.classList.remove('on');
+}
+
+function showErr(m) { const b = document.getElementById('errBox'); b.textContent = m; b.classList.add('on'); }
+
+function safeJSON(raw) {
+  const s = raw.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a < 0 || b < 0) throw new Error('JSON introuvable dans la réponse');
+  return JSON.parse(s.slice(a, b + 1));
+}
+
+// ── RECORDER ──
+let isRec = false, fullTxt = '', recog = null, timerIv = null, secs = 0;
+let liveIv = null, lastSent = '', liveReady = false;
+const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+function tryDetect(txt) {
+  if (!document.getElementById('ville').value) {
+    const v = detectVille(txt);
+    if (v && v !== villeDetected) updateBadge(v);
+  }
+}
+
+function buildSR() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = 'fr-FR'; r.continuous = true; r.interimResults = true;
+  let interim = '';
+  r.onstart = () => {
+    document.getElementById('recStatus').textContent = 'enregistrement en cours…';
+    document.getElementById('recStatus').className = 'rst on';
+  };
+  r.onresult = e => {
+    interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fullTxt += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    const box = document.getElementById('recTbox');
+    box.textContent = fullTxt + interim;
+    box.classList.remove('empty');
+    box.scrollTop = box.scrollHeight;
+    tryDetect(fullTxt);
+  };
+  r.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+      showErr('micro refusé — cliquer sur l\'icône cadenas dans la barre d\'adresse → autoriser le micro → recharger');
+      stopRec();
+    } else if (e.error !== 'no-speech') {
+      console.warn('SR:', e.error);
+    }
+  };
+  r.onend = () => { if (isRec) { try { r.start(); } catch(_){} } };
+  return r;
+}
+
+function startRec() {
+  if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
+    showErr('SpeechRecognition non supporté — ouvrir dans Chrome ou Edge');
+    return;
+  }
+  isRec = true; fullTxt = ''; lastSent = ''; liveReady = false; secs = 0;
+  document.getElementById('recBtn').classList.add('rec');
+  document.getElementById('rdot').classList.add('sq');
+  document.getElementById('recStatus').textContent = 'démarrage…';
+  document.getElementById('recStatus').className = 'rst on';
+  document.getElementById('resetRecBtn').disabled = true;
+  document.getElementById('recTbox').textContent = 'transcription en direct…';
+  document.getElementById('recTbox').classList.add('empty');
+  timerIv = setInterval(() => { secs++; document.getElementById('rtimer').textContent = fmt(secs); }, 1000);
+  recog = buildSR();
+  try { recog.start(); } catch(e) { showErr('impossible de démarrer : ' + e.message); stopRec(); return; }
+  setTimeout(() => { liveReady = true; runLiveHint(); }, 20000);
+  liveIv = setInterval(runLiveHint, 25000);
+  document.getElementById('liveBlock').classList.add('on');
+}
+
+function stopRec() {
+  isRec = false;
+  clearInterval(timerIv); clearInterval(liveIv);
+  if (recog) { try { recog.stop(); } catch(_){} recog = null; }
+  document.getElementById('liveBlock').classList.remove('on');
+  document.getElementById('recBtn').classList.remove('rec');
+  document.getElementById('recBtn').classList.add('done');
+  document.getElementById('recBtn').innerHTML = '<span style="color:var(--green);font-size:16px;">✓</span>';
+  document.getElementById('recStatus').textContent = 'terminé';
+  document.getElementById('recStatus').className = 'rst ok';
+  document.getElementById('resetRecBtn').disabled = false;
+}
+
+document.getElementById('recBtn').addEventListener('click', () => {
+  if (!isRec) startRec(); else stopRec();
+});
+
+document.getElementById('resetRecBtn').addEventListener('click', () => {
+  if (isRec) stopRec();
+  fullTxt = ''; secs = 0;
+  document.getElementById('rtimer').textContent = '00:00';
+  const btn = document.getElementById('recBtn');
+  btn.className = 'rbtn'; btn.innerHTML = '<div class="rdot" id="rdot"></div>';
+  document.getElementById('recStatus').textContent = 'appuyer pour démarrer';
+  document.getElementById('recStatus').className = 'rst';
+  document.getElementById('resetRecBtn').disabled = true;
+  const box = document.getElementById('recTbox');
+  box.textContent = 'transcription en direct…'; box.classList.add('empty');
+});
+
+// ── LIVE HINTS via sendPrompt ──
+async function runLiveHint() {
+  if (!liveReady) return;
+  const cur = fullTxt.trim();
+  if (cur.length < 50 || cur === lastSent) return;
+  lastSent = cur;
+  const ville = getVille();
+  document.getElementById('liveBody').innerHTML = '<div class="lsp">analyse…</div>';
+  // On stocke qu'un hint est attendu
+  window._awaitingHint = true;
+  const prompt = `COACH_VDR_HINT
+L'appel est EN COURS. Donne 1 ou 2 conseils TRÈS COURTS actionnables immédiatement. Style impératif direct. Ville : ${ville}.
+Transcription (fin) : ${cur.slice(-400)}
+Réponds UNIQUEMENT avec ce JSON (commence par {) : {"hints":["conseil 1","conseil 2"]}`;
+  try { window.sendPrompt(prompt); } catch(_) { document.getElementById('liveBody').innerHTML = '<div class="lsp">—</div>'; }
+}
+
+// ── CHAR COUNT + DETECT ──
+document.getElementById('manTxt').addEventListener('input', function() {
+  document.getElementById('cc').textContent = this.value.length + ' caractères';
+  tryDetect(this.value);
+});
+
+// ── CLEAR ──
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (isRec) stopRec();
+  fullTxt = ''; secs = 0;
+  document.getElementById('rtimer').textContent = '00:00';
+  const btn = document.getElementById('recBtn'); btn.className = 'rbtn'; btn.innerHTML = '<div class="rdot" id="rdot"></div>';
+  document.getElementById('recStatus').textContent = 'appuyer pour démarrer';
+  document.getElementById('recStatus').className = 'rst';
+  document.getElementById('resetRecBtn').disabled = true;
+  const tbox = document.getElementById('recTbox'); tbox.textContent = 'transcription en direct…'; tbox.classList.add('empty');
+  document.getElementById('manTxt').value = ''; document.getElementById('cc').textContent = '0 caractères';
+  updateBadge('');
+  document.getElementById('errBox').classList.remove('on');
+  document.getElementById('waitingBox').classList.remove('on');
+  document.getElementById('analyzeBtn').disabled = false;
+});
+
+// ── ANALYZE via sendPrompt ──
+document.getElementById('analyzeBtn').addEventListener('click', () => {
+  const txt = fullTxt.trim() || document.getElementById('manTxt').value.trim();
+  if (!txt) { showErr('aucun verbatim — enregistrer un appel ou coller le texte'); return; }
+  tryDetect(txt);
+  const ville = getVille();
+  const st = STATS[ville.toLowerCase()];
+  const statsCtx = st ? `Données ${ville} 2025 : ${st.c} candidats attendus, ${st.e} entreprises, satisfaction recruteurs ${st.s}/10.` : '';
+
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('waitingBox').classList.add('on');
+  document.getElementById('errBox').classList.remove('on');
+  window._awaitingAnalysis = true;
+  window._awaitingHint = false;
+
+  const prompt = `COACH_VDR_ANALYZE
+Tu es coach commercial du Village des Recruteurs. Analyse cet appel. Réponds UNIQUEMENT avec un objet JSON valide. Commence directement par {, sans markdown, sans texte avant ou après.
+
+${statsCtx}
+
+SÉPARATION DES VOIX : C = commercial, P = prospect. Découpe en segments courts dans l'ordre.
+
+SCRIPT 7 ÉTAPES :
+1. Introduction : se présenter + métropole + partenaires emploi
+2. Présentation événement : salon présentiel + 10 jours plateforme Matching Square
+3. Découverte client : recrutements prévus ? profils ? expérience salons ?
+4. Argumentaire : CVthèque, matching, RDV hors salon 5j avant/après, exemples chiffrés
+5. Tarifs & Packs : 1490€-2990€ (1j), 1790€-3290€ (2j), Lyon/Toulouse +300€, -170€ frais dossier
+6. Gestion objections : aïkido / CNV / meta-model
+7. Clôture : prochaine étape précise, rappel calé, devis demandé
+
+OBJECTIONS :
+"Pas de recrutements"→vivier+marque employeur | "Pas le bon moment"→11j à votre rythme | "On a nos canaux"→VDR complète | "Salons ça marche pas"→plateforme digitale | "Trop cher"→opération 11j | "Il faut voir avec X"→éléments décision | "Envoyez un mail"→KO si accepté sans recadrer | "Pas intéressé"→comprendre blocage
+
+Ville : ${ville}
+TRANSCRIPTION :
+${txt}
+
+FORMAT (commence par {, rien d'autre) :
+{"scoreGlobal":5,"villeDetectee":"${ville}","transcript":[{"who":"C","text":"…"},{"who":"P","text":"…"}],"pointsForts":["…","…"],"pointsFaibles":["…","…","…"],"scores":{"Introduction":6,"Présentation événement":5,"Découverte client":1,"Argumentaire":5,"Tarifs & Packs":4,"Gestion objections":2,"Clôture":3},"objections":[{"type":"…","gestion":"ko","commentaire":"…"}],"coaching":"phrase courte, percutante, immédiatement actionnable"}`;
+
+  try { window.sendPrompt(prompt); }
+  catch(e) {
+    showErr('sendPrompt indisponible dans cet environnement');
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('waitingBox').classList.remove('on');
+    window._awaitingAnalysis = false;
+  }
+});
+
+// ── ÉCOUTE RÉPONSES CLAUDE ──
+// Claude répond dans le chat — on intercepte via postMessage
+window.addEventListener('message', e => {
+  const d = e.data;
+  if (!d) return;
+  const txt = (typeof d === 'string') ? d : (d.text || d.content || d.message || '');
+  if (!txt) return;
+
+  // hint en direct
+  if (window._awaitingHint && txt.includes('hints')) {
+    try {
+      const parsed = safeJSON(txt);
+      if (parsed.hints) {
+        window._awaitingHint = false;
+        const body = document.getElementById('liveBody');
+        body.innerHTML = '';
+        parsed.hints.forEach(h => { const d=document.createElement('div'); d.className='lhint'; d.textContent=h; body.appendChild(d); });
+      }
+    } catch(_){}
+  }
+
+  // analyse complète
+  if (window._awaitingAnalysis && txt.includes('scoreGlobal')) {
+    try {
+      const fb = safeJSON(txt);
+      if (fb.scoreGlobal !== undefined) {
+        window._awaitingAnalysis = false;
+        document.getElementById('waitingBox').classList.remove('on');
+        document.getElementById('analyzeBtn').disabled = false;
+        renderFeedback(fb);
+      }
+    } catch(_){}
+  }
+});
+
+// ── RENDER ──
+function renderFeedback(fb) {
+  const ville = fb.villeDetectee || getVille();
+  const now = new Date();
+  document.getElementById('fdate').textContent =
+    `${ville} · ${now.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})} · ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}`;
+  const s = Number(fb.scoreGlobal) || 0;
+  const sEl = document.getElementById('scoreNum'); sEl.textContent = s;
+  sEl.className = 'sn ' + (s>=7?'h':s>=5?'m':'l');
+  const lines = fb.transcript || [];
+  if (lines.length > 0) {
+    document.getElementById('tFb').style.display = 'block';
+    document.getElementById('tLines').innerHTML = lines.map(l =>
+      `<div class="tv ${l.who}"><span class="tvw">${l.who==='C'?'commercial':'prospect'}</span>${l.text}</div>`
+    ).join('');
+  }
+  document.getElementById('fbGood').innerHTML = (fb.pointsForts||[]).map(p=>`<li>${p}</li>`).join('');
+  document.getElementById('fbBad').innerHTML  = (fb.pointsFaibles||[]).map(p=>`<li>${p}</li>`).join('');
+  const C = {h:'#1a7a5e',m:'#c8870a',l:'#c0392b'};
+  document.getElementById('fbScores').innerHTML = Object.entries(fb.scores||{}).map(([lbl,val]) => {
+    const v=Number(val)||0, c=v>=7?C.h:v>=5?C.m:C.l;
+    return `<div class="sr"><span class="sl">${lbl}</span><div class="st"><div class="sf" style="width:${v*10}%;background:${c}"></div></div><span class="sv" style="color:${c}">${v}/10</span></div>`;
+  }).join('');
+  const objEl = document.getElementById('fbObj');
+  objEl.innerHTML = (!fb.objections||!fb.objections.length)
+    ? '<span style="font-size:11px;color:var(--muted2);">aucune objection détectée</span>'
+    : fb.objections.map(o=>`<div class="oi"><div class="op ${o.gestion==='ok'?'ok':'ko'}"></div><div class="ot"><strong>${o.type}</strong><span>${o.commentaire}</span></div></div>`).join('');
+  document.getElementById('fbCoach').textContent = fb.coaching || '';
+  document.getElementById('inputSection').classList.add('hidden');
+  document.getElementById('feedbackSection').classList.remove('hidden');
+  document.getElementById('feedbackSection').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function resetAll() {
+  if (isRec) stopRec();
+  villeDetected=''; fullTxt=''; secs=0;
+  document.getElementById('rtimer').textContent='00:00';
+  const btn=document.getElementById('recBtn'); btn.className='rbtn'; btn.innerHTML='<div class="rdot" id="rdot"></div>';
+  document.getElementById('recStatus').textContent='appuyer pour démarrer'; document.getElementById('recStatus').className='rst';
+  document.getElementById('resetRecBtn').disabled=true;
+  const tbox=document.getElementById('recTbox'); tbox.textContent='transcription en direct…'; tbox.classList.add('empty');
+  document.getElementById('manTxt').value=''; document.getElementById('cc').textContent='0 caractères';
+  document.getElementById('ville').value=''; updateBadge('');
+  document.getElementById('errBox').classList.remove('on');
+  document.getElementById('waitingBox').classList.remove('on');
+  document.getElementById('analyzeBtn').disabled=false;
+  document.getElementById('feedbackSection').classList.add('hidden');
+  document.getElementById('inputSection').classList.remove('hidden');
+  window._awaitingAnalysis=false; window._awaitingHint=false;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
